@@ -1,57 +1,101 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Certificate Verification</title>
+  <title>Certificate Verification | Meet Hacker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body{font-family:Arial;max-width:700px;margin:40px auto;}
-    input{padding:10px;width:80%;font-size:16px;}
-    button{padding:10px;font-size:16px;}
-    .result{margin-top:20px;padding:15px;border-radius:8px;border:1px solid #ccc;}
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      max-width: 700px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    h2 { text-align: center; color: #222; }
+    input {
+      padding: 10px;
+      width: 75%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background: #0056b3; }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
   </style>
 </head>
 <body>
-  <h2>Certificate Verification</h2>
-  <p>Enter Certificate ID (eg. MH-EH-2025-0001):</p>
-  <input id="qid" placeholder="Certificate ID"/>
+  <h2>Certificate Verification Portal</h2>
+  <p>Enter your Certificate ID (example: MH-EH-2025-0001)</p>
+  <input id="qid" placeholder="Certificate ID">
   <button onclick="verify()">Verify</button>
+
   <div id="out"></div>
 
 <script>
-// CHANGE THIS to your published CSV URL (from Google Sheets -> Publish -> CSV)
-const CSV_URL = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/pub?output=csv";
+/* 🔗 Replace this link with your own published Google Sheet CSV link */
+const CSV_URL = "https://docs.google.com/spreadsheets/d/1OCe0iep6tN5xW37WNqaZwlt0b3zljcUHubp9Cf-NjC8/pub?output=csv";
 
 let data = [];
+
+// Fetch the sheet data
 fetch(CSV_URL)
-  .then(r=>r.text())
-  .then(txt=>{
-    const rows = txt.trim().split('\n').map(r=>r.split(','));
-    const headers = rows.shift().map(h=>h.replace(/(^"|"$)/g,''));
+  .then(r => r.text())
+  .then(txt => {
+    const rows = txt.trim().split('\n').map(r => r.split(','));
+    const headers = rows.shift().map(h => h.replace(/(^"|"$)/g,''));
     data = rows.map(r=>{
-      const obj = {};
-      r.forEach((c,i)=> obj[headers[i]] = (c||"").replace(/(^"|"$)/g,''));
+      const obj={};
+      r.forEach((c,i)=>obj[headers[i]]=(c||"").replace(/(^"|"$)/g,''));
       return obj;
     });
+  })
+  .catch(err => {
+    document.getElementById('out').innerHTML =
+      '<div class="result">⚠️ Could not load data from Google Sheets.<br>' +
+      'Make sure your sheet is published to the web.</div>';
   });
 
-function verify(){
+function verify() {
   const id = document.getElementById('qid').value.trim();
   const out = document.getElementById('out');
   out.innerHTML = '';
-  if(!id){ out.innerHTML = '<div class="result">Please enter an ID.</div>'; return;}
-  const found = data.find(d => (d.ID || d["Unique ID"] || d["Certificate ID"] || "").toLowerCase() === id.toLowerCase());
-  if(found){
+
+  if (!id) {
+    out.innerHTML = '<div class="result">⚠️ Please enter a Certificate ID.</div>';
+    return;
+  }
+
+  const found = data.find(d => (d.ID || '').toLowerCase() === id.toLowerCase());
+
+  if (found) {
     out.innerHTML = `<div class="result">
-      <strong>Valid Certificate</strong><br>
-      Name: ${found.Name || found["Student Name"] || ''} <br>
-      Course: ${found.Course || ''} <br>
-      Date: ${found.Date || ''} <br>
-      <a href="${found.PDF || found['Certificate Link'] || '#'}" target="_blank">Open Certificate (PDF)</a>
+      ✅ <strong>Valid Certificate</strong><br><br>
+      <b>Name:</b> ${found.Name || ''}<br>
+      <b>Course:</b> ${found.Course || ''}<br>
+      <b>Date:</b> ${found.Date || ''}<br><br>
+      ${found.PDF ? `<a href="${found.PDF}" target="_blank">🔗 View Certificate (PDF)</a>` : ''}
     </div>`;
   } else {
-    out.innerHTML = '<div class="result">Certificate not found (invalid ID).</div>';
+    out.innerHTML = '<div class="result">❌ Certificate not found. Please check your ID.</div>';
   }
 }
 </script>
 </body>
 </html>
+
